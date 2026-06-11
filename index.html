@@ -16,6 +16,7 @@ body {
     background: #0d0d0d;
     color: white;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 /* MENU */
@@ -40,6 +41,7 @@ body {
 #game {
     display: none;
     height: 100vh;
+    height: 100dvh;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
@@ -51,19 +53,19 @@ body {
     width: 100%;
     display: flex;
     justify-content: space-around;
-    font-size: 18px;
+    font-size: clamp(14px, 3vw, 18px);
 }
 
 /* QUESTION */
 #question {
-    font-size: 32px;
+    font-size: clamp(20px, 6vw, 32px);
     text-align: center;
     margin: 5px;
 }
 
 /* DISPLAY */
 #display {
-    font-size: 28px;
+    font-size: clamp(18px, 5vw, 28px);
     background: #1a1a1a;
     padding: 10px;
     width: 90%;
@@ -75,8 +77,9 @@ body {
 #pad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 6px;
     width: 90%;
+    max-width: 320px;
 }
 
 .key {
@@ -95,8 +98,9 @@ body {
 /* SUBMIT */
 #submit {
     width: 90%;
+    max-width: 320px;
     padding: 15px;
-    font-size: 22px;
+    font-size: clamp(18px, 4vw, 22px);
     background: #00ffcc;
     border: none;
     border-radius: 10px;
@@ -133,6 +137,28 @@ body {
     100% {
         transform: translate(-50%, -250%);
         opacity: 0;
+    }
+}
+
+/* MOBILE TWEAKS */
+@media (max-height: 700px) {
+    #question {
+        font-size: 24px;
+    }
+
+    #display {
+        font-size: 22px;
+        padding: 6px;
+    }
+
+    .key {
+        font-size: 20px;
+        padding: 12px;
+    }
+
+    #submit {
+        font-size: 18px;
+        padding: 10px;
     }
 }
 </style>
@@ -176,7 +202,6 @@ body {
     <div class="key" onclick="press(8)">8</div>
     <div class="key" onclick="press(9)">9</div>
 
-    <!-- CHANGED KEYS -->
     <div class="key" onclick="toggleSign()">+/−</div>
     <div class="key" onclick="press(0)">0</div>
     <div class="key" onclick="back()">⌫</div>
@@ -201,7 +226,6 @@ let combo = 0;
 let time = 10;
 let timer;
 
-/* TIME PER DIFFICULTY */
 function getTime() {
     if (difficulty === "easy") return 15;
     if (difficulty === "medium") return 20;
@@ -251,6 +275,7 @@ function solve(e) {
 
 function next() {
     input = "";
+    document.getElementById("display").innerText = "0";
 
     expr = build();
     answer = solve(expr);
@@ -269,6 +294,7 @@ function next() {
             combo = 0;
             update();
             next();
+            return;
         }
     }, 1000);
 }
@@ -289,7 +315,6 @@ function back() {
     document.getElementById("display").innerText = input || "0";
 }
 
-/* NEW: +/- */
 function toggleSign() {
     if (input === "") {
         input = "-";
@@ -320,18 +345,16 @@ function showMsg(text) {
 }
 
 function randomMsg() {
-    let msgs = [
-        "Try again",
-        "Wrong",
-        "Think faster",
-        "Focus!",
-        "Almost"
-    ];
+    let msgs = ["Try again", "Wrong", "Think faster", "Focus!", "Almost"];
     return msgs[Math.floor(Math.random() * msgs.length)];
 }
 
-/* CHECK */
 function check() {
+    if (input.trim() === "") {
+        showMsg("Enter answer");
+        return;
+    }
+
     let user = Number(input);
 
     if (user === answer) {
