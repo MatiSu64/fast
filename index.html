@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAST Arcade</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #0d0d0d;
+    color: white;
+    overflow: hidden;
+}
+
+/* MENU */
+#menu {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#menu button {
+    font-size: 22px;
+    padding: 15px;
+    margin: 10px;
+    width: 200px;
+    border-radius: 12px;
+    border: none;
+}
+
+/* GAME */
+#game {
+    display: none;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+/* TOP INFO */
+#top {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    font-size: 18px;
+}
+
+/* QUESTION */
+#question {
+    font-size: 32px;
+    text-align: center;
+    margin: 5px;
+}
+
+/* DISPLAY */
+#display {
+    font-size: 28px;
+    background: #1a1a1a;
+    padding: 10px;
+    width: 90%;
+    text-align: center;
+    border-radius: 10px;
+}
+
+/* KEYPAD */
+#pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 90%;
+}
+
+.key {
+    font-size: 26px;
+    padding: 18px;
+    background: #222;
+    border-radius: 10px;
+    text-align: center;
+    user-select: none;
+}
+
+.key:active {
+    background: #444;
+}
+
+/* SUBMIT */
+#submit {
+    width: 90%;
+    padding: 15px;
+    font-size: 22px;
+    background: #00ffcc;
+    border: none;
+    border-radius: 10px;
+}
+
+/* FLOAT TEXT */
+#floatText {
+    position: fixed;
+    left: 50%;
+    top: 55%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: #ff4d4d;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.float {
+    animation: floatUpDown 1.3s ease-in-out forwards;
+}
+
+@keyframes floatUpDown {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 20%);
+    }
+    20% {
+        opacity: 1;
+    }
+    60% {
+        transform: translate(-50%, -140%);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -250%);
+        opacity: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu">
+    <h1>FAST</h1>
+    <p>Select Difficulty</p>
+
+    <button onclick="start('easy')">Easy</button>
+    <button onclick="start('medium')">Medium</button>
+    <button onclick="start('hard')">Hard</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+
+<div id="top">
+    <div>⏱ <span id="time">10</span></div>
+    <div>⭐ <span id="score">0</span></div>
+    <div>🔥 <span id="combo">0</span></div>
+</div>
+
+<div id="question">---</div>
+
+<div id="display">0</div>
+
+<button id="submit" onclick="check()">SUBMIT</button>
+
+<div id="pad">
+    <div class="key" onclick="press(1)">1</div>
+    <div class="key" onclick="press(2)">2</div>
+    <div class="key" onclick="press(3)">3</div>
+    <div class="key" onclick="press(4)">4</div>
+    <div class="key" onclick="press(5)">5</div>
+    <div class="key" onclick="press(6)">6</div>
+    <div class="key" onclick="press(7)">7</div>
+    <div class="key" onclick="press(8)">8</div>
+    <div class="key" onclick="press(9)">9</div>
+
+    <!-- CHANGED KEYS -->
+    <div class="key" onclick="toggleSign()">+/−</div>
+    <div class="key" onclick="press(0)">0</div>
+    <div class="key" onclick="back()">⌫</div>
+
+    <div class="key" onclick="press('.')">.</div>
+</div>
+
+</div>
+
+<!-- FLOAT TEXT -->
+<div id="floatText"></div>
+
+<script>
+
+let difficulty = "easy";
+let expr = "";
+let answer = 0;
+
+let input = "";
+let score = 0;
+let combo = 0;
+let time = 10;
+let timer;
+
+/* TIME PER DIFFICULTY */
+function getTime() {
+    if (difficulty === "easy") return 15;
+    if (difficulty === "medium") return 20;
+    return 40;
+}
+
+function start(diff) {
+    difficulty = diff;
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("game").style.display = "flex";
+    next();
+}
+
+function rand(max) {
+    return Math.floor(Math.random() * max) + 1;
+}
+
+function build() {
+    let ops = ["+", "-", "*", "/2"];
+
+    let len = difficulty === "easy" ? 2 :
+              difficulty === "medium" ? 3 : 4;
+
+    let max = difficulty === "easy" ? 20 :
+              difficulty === "medium" ? 40 : 80;
+
+    let e = "" + rand(max);
+
+    for (let i = 0; i < len; i++) {
+        let op = ops[Math.floor(Math.random() * ops.length)];
+        let n = rand(max);
+
+        if (op === "/2") {
+            n = n * 2;
+            e += " / 2";
+        } else {
+            e += " " + op + " " + n;
+        }
+    }
+
+    return e;
+}
+
+function solve(e) {
+    return Function("return " + e)();
+}
+
+function next() {
+    input = "";
+
+    expr = build();
+    answer = solve(expr);
+
+    document.getElementById("question").innerText = expr;
+
+    time = getTime();
+    document.getElementById("time").innerText = time;
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+        time--;
+        document.getElementById("time").innerText = time;
+
+        if (time <= 0) {
+            combo = 0;
+            update();
+            next();
+        }
+    }, 1000);
+}
+
+/* INPUT */
+function press(n) {
+    if (n === ".") {
+        if (input.includes(".")) return;
+        if (input === "" || input === "-") input += "0";
+    }
+
+    input += n;
+    document.getElementById("display").innerText = input || "0";
+}
+
+function back() {
+    input = input.slice(0, -1);
+    document.getElementById("display").innerText = input || "0";
+}
+
+/* NEW: +/- */
+function toggleSign() {
+    if (input === "") {
+        input = "-";
+    } else if (input === "-") {
+        input = "";
+    } else if (input.startsWith("-")) {
+        input = input.slice(1);
+    } else {
+        input = "-" + input;
+    }
+
+    document.getElementById("display").innerText = input || "0";
+}
+
+/* FLOAT MESSAGE */
+function showMsg(text) {
+    let el = document.getElementById("floatText");
+    el.innerText = text;
+
+    el.classList.remove("float");
+    void el.offsetWidth;
+
+    el.classList.add("float");
+
+    setTimeout(() => {
+        el.classList.remove("float");
+    }, 1300);
+}
+
+function randomMsg() {
+    let msgs = [
+        "Try again",
+        "Wrong",
+        "Think faster",
+        "Focus!",
+        "Almost"
+    ];
+    return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+/* CHECK */
+function check() {
+    let user = Number(input);
+
+    if (user === answer) {
+        combo++;
+
+        let mult = 1;
+        if (combo >= 10) mult = 3;
+        else if (combo >= 5) mult = 2;
+
+        score += 10 * mult;
+
+        update();
+        next();
+    } else {
+        combo = 0;
+        showMsg(randomMsg());
+        update();
+    }
+}
+
+function update() {
+    document.getElementById("score").innerText = score;
+    document.getElementById("combo").innerText = combo;
+}
+
+</script>
+
+</body>
+</html>
