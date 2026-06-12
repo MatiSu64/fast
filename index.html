@@ -261,6 +261,8 @@ function build() {
         if (op === "/2") {
             n = n * 2;
             e += " / 2";
+        } else if (op === "*") {
+            e += " * 2";
         } else {
             e += " " + op + " " + n;
         }
@@ -357,7 +359,7 @@ function check() {
 
     let user = Number(input);
 
-    if (user === answer) {
+    if (Math.abs(user - answer) < 0.001) {
         combo++;
 
         let mult = 1;
